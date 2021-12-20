@@ -17,6 +17,7 @@ import com.google.zxing.common.BitMatrix;
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
 import com.google.zxing.oned.Code128Writer;
+import com.google.zxing.qrcode.QRCodeWriter;
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
 import java.util.Hashtable;
 
@@ -38,50 +39,55 @@ public class MainActivity extends AppCompatActivity {
 
         buttonGenerate.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View view) {    buttonGenerate_onClick(view);    }
+            public void onClick(View view) {
+                QRCodeWriter qrCodeWriter = new QRCodeWriter();
+                try {
+                    BitMatrix bitMatrix = qrCodeWriter.encode(editTextProductId.getText().toString(), BarcodeFormat.QR_CODE, 200, 200);
+                    Bitmap bitmap = Bitmap.createBitmap(200, 200, Bitmap.Config.RGB_565);
+                    for (int x = 0; x<200; x++){
+                        for (int y=0; y<200; y++){
+                            bitmap.setPixel(x,y,bitMatrix.get(x,y)? Color.BLACK : Color.WHITE);
+                        }
+                    }
+                    imageViewResult.setImageBitmap(bitmap);
+                } catch (Exception e) { e.printStackTrace(); }
+
+//                try {
+//                    String productId = editTextProductId.getText().toString();
+//                    Hashtable<EncodeHintType, ErrorCorrectionLevel> hintMap = new Hashtable<EncodeHintType, ErrorCorrectionLevel>();
+//                    hintMap.put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.L);
+//                    Writer codeWriter;
+//                    codeWriter = new Code128Writer();
+//                    BitMatrix byteMatrix = codeWriter.encode(productId, BarcodeFormat.CODE_128,400, 200, hintMap);
+//                    int width = byteMatrix.getWidth();
+//                    int height = byteMatrix.getHeight();
+//                    Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+//                    for (int i = 0; i < width; i++) {
+//                        for (int j = 0; j < height; j++) {    bitmap.setPixel(i, j, byteMatrix.get(i, j) ? Color.BLACK : Color.WHITE);    }
+//                    }
+//                    imageViewResult.setImageBitmap(bitmap);
+//                } catch (Exception e) {    Toast.makeText(getApplicationContext(), e.getMessage(), Toast.LENGTH_LONG).show();    }
+            }
         });
         buttonScan.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                buttonScan_onClick(view);
+
+                IntentIntegrator intentIntegrator = new IntentIntegrator(MainActivity.this);
+                intentIntegrator.setDesiredBarcodeFormats(IntentIntegrator.ALL_CODE_TYPES);
+                intentIntegrator.setCameraId(0);
+                intentIntegrator.initiateScan();
             }
         });
     }
 
-    private void buttonGenerate_onClick(View view) {
-        try {
-            String productId = editTextProductId.getText().toString();
-            Hashtable<EncodeHintType, ErrorCorrectionLevel> hintMap = new Hashtable<EncodeHintType, ErrorCorrectionLevel>();
-            hintMap.put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.L);
-            Writer codeWriter;
-            codeWriter = new Code128Writer();
-            BitMatrix byteMatrix = codeWriter.encode(productId, BarcodeFormat.CODE_128,400, 200, hintMap);
-            int width = byteMatrix.getWidth();
-            int height = byteMatrix.getHeight();
-            Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-            for (int i = 0; i < width; i++) {
-                for (int j = 0; j < height; j++) {    bitmap.setPixel(i, j, byteMatrix.get(i, j) ? Color.BLACK : Color.WHITE);    }
-            }
-            imageViewResult.setImageBitmap(bitmap);
-        } catch (Exception e) {    Toast.makeText(getApplicationContext(), e.getMessage(), Toast.LENGTH_LONG).show();    }
-    }
-
-    private void buttonScan_onClick(View view) {
-        IntentIntegrator intentIntegrator = new IntentIntegrator(this);
-        intentIntegrator.setDesiredBarcodeFormats(IntentIntegrator.ALL_CODE_TYPES);
-        intentIntegrator.setCameraId(0);
-        intentIntegrator.initiateScan();
-    }
-
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-
         IntentResult intentResult = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
         if (intentResult != null) {
             String productId = intentResult.getContents();
             Toast.makeText(getApplicationContext(), productId, Toast.LENGTH_LONG).show();
-        }else{
-            super.onActivityResult(requestCode, resultCode, data);
         }
+        else{ super.onActivityResult(requestCode, resultCode, data); }
     }
 }
